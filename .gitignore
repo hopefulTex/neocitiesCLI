@@ -1,0 +1,6 @@
+.TODO
+.vscode
+.DS_Store
+.env
+.git
+test/
