@@ -182,6 +182,9 @@ func execute(conn *api.Connection, cmd command) error {
 		if err != nil {
 			return err
 		}
+	case "version":
+		fmt.Println(VERSION)
+		return nil
 	}
 	return err
 }
@@ -246,6 +249,11 @@ func setFlags() (command, error) {
 			args:     args[2:],
 		}
 
+	case "--version":
+		cmd = command{
+			function: "version",
+			args:     nil,
+		}
 	default:
 		fmt.Print(MAIN_HELP_STRING)
 		return cmd, fmt.Errorf("invalid subcommand")

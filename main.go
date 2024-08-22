@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const VERSION = "0.0.1"
+
 func main() {
 	cmd, err := setFlags()
 	if err != nil {
@@ -13,10 +15,12 @@ func main() {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
+
 	config, err := getDefaultConfig()
 	if err != nil {
 		config = DEFAILT_CONFIG.Configs[0]
 	}
+
 	if config.Domain == "" || config.APIKey == "" {
 		fmt.Println("no login found")
 		config, err = login()
