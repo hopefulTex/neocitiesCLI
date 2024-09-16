@@ -1,24 +1,23 @@
-package main
+package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"neocitiesCli/api"
 	"os"
 	"strings"
 )
 
-func login() (api.Config, error) {
+func Login() (api.Config, error) {
 	config := api.Config{}
 
-	domain, isSubdomain, err := getDomainPrompt()
+	domain, isSubdomain, err := GetDomainPrompt()
 	if err != nil {
 		return config, err
 	}
 	config.Domain = domain
 	config.IsSubdomain = isSubdomain
 
-	api_key, err := getAPIkeyPrompt(domain)
+	api_key, err := GetAPIkeyPrompt(domain)
 	if err != nil {
 		return config, err
 	}
@@ -27,7 +26,7 @@ func login() (api.Config, error) {
 	return config, nil
 }
 
-func getDomainPrompt() (string, bool, error) {
+func GetDomainPrompt() (string, bool, error) {
 	var isSubdomain bool = false
 	var err error
 	isSubdomainString := ""
@@ -64,7 +63,7 @@ func getDomainPrompt() (string, bool, error) {
 	return domain, isSubdomain, nil
 }
 
-func getAPIkeyPrompt(domain string) (string, error) {
+func GetAPIkeyPrompt(domain string) (string, error) {
 	var err error
 
 	pass := os.Getenv("NEOCITIES_PASSWORD")
@@ -90,7 +89,7 @@ func getAPIkeyPrompt(domain string) (string, error) {
 	return api_key, nil
 }
 
-func resetPrompt() bool {
+func ResetPrompt() bool {
 	var input string
 	fmt.Print("Are you sure you want to reset the configuration file? [y/n]\n")
 	_, err := fmt.Scanln(&input)
@@ -103,7 +102,7 @@ func resetPrompt() bool {
 	return false
 }
 
-func removeGitIgnore(files []string) ([]string, error) {
+func RemoveGitIgnore(files []string) ([]string, error) {
 	var new_files []string
 	var isIgnored bool = false
 	ignore, err := os.ReadFile(".gitignore")
@@ -154,7 +153,7 @@ func removeGitIgnore(files []string) ([]string, error) {
 	return new_files, nil
 }
 
-func upload(conn *api.Connection, paths []string) error {
+func Upload(conn *api.Connection, paths []string) error {
 	var errs []error
 	var files []api.UploadFile
 
@@ -175,141 +174,4 @@ func upload(conn *api.Connection, paths []string) error {
 		return errs[0]
 	}
 	return nil
-}
-
-var CONFIG_PATH string = ""
-
-var DEFAILT_CONFIG ConfigFile = ConfigFile{
-	Configs: []api.Config{
-		{
-			IsDefault:   true,
-			Domain:      "",
-			APIKey:      "",
-			IsSubdomain: false,
-		},
-	},
-}
-
-type ConfigFile struct {
-	Configs []api.Config `json:"configs"`
-}
-
-func getDefaultConfig() (api.Config, error) {
-	file, err := readConfig()
-
-	if err != nil || len(file.Configs) == 0 {
-		return DEFAILT_CONFIG.Configs[0], err
-	}
-	for _, cfg := range file.Configs {
-		if cfg.IsDefault {
-
-			if cfg.APIKey == "" {
-				cfg.APIKey = os.Getenv("NEOCITIES_API_KEY")
-			}
-			if cfg.Domain == "" {
-				cfg.Domain = os.Getenv("NEOCITIES_DOMAIN")
-			}
-			return cfg, nil
-		}
-	}
-
-	if file.Configs[0].APIKey == "" {
-		file.Configs[0].APIKey = os.Getenv("NEOCITIES_API_KEY")
-	}
-	if file.Configs[0].Domain == "" {
-		file.Configs[0].Domain = os.Getenv("NEOCITIES_DOMAIN")
-	}
-	return file.Configs[0], nil
-}
-
-func readConfig() (ConfigFile, error) {
-	cfgs := ConfigFile{}
-
-	path, err := getConfigPath()
-	if err != nil {
-		return cfgs, err
-	}
-
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return cfgs, err
-	}
-	err = json.Unmarshal(file, &cfgs)
-	if err != nil {
-		return cfgs, err
-	}
-
-	return cfgs, nil
-}
-
-func writeConfig(cfg api.Config) error {
-	path, err := getConfigPath()
-	if err != nil {
-		return err
-	}
-	cfgFile, err := readConfig()
-	if err == nil {
-		if len(cfgFile.Configs) == 0 {
-			cfgFile.Configs = []api.Config{
-				cfg,
-			}
-		}
-		for i, block := range cfgFile.Configs {
-			if block.Domain == cfg.Domain {
-				cfgFile.Configs[i] = cfg
-				break
-			}
-		}
-	}
-	cfgFile = ConfigFile{
-		Configs: []api.Config{
-			cfg,
-		},
-	}
-	fmt.Printf("Writing config to %s\n", path)
-	text, err := json.MarshalIndent(cfgFile, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	dirPath := strings.TrimSuffix(path, "config.json")
-	fmt.Printf("DirPath: %s\n", dirPath)
-	_, err = os.ReadDir(dirPath)
-	if err != nil {
-		fmt.Printf("ReadDir Error: %s\n", err)
-		if os.IsNotExist(err) {
-			fmt.Printf("Creating directory %s\n", dirPath)
-			err = os.Mkdir(dirPath, os.ModeDir)
-
-		}
-		if err != nil {
-			return err
-		}
-	}
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	_, err = fmt.Fprintln(file, string(text))
-	return err
-}
-
-func getConfigPath() (string, error) {
-	var path string
-	if CONFIG_PATH == "" {
-		path = os.Getenv("NEOCITIES_CONFIG_PATH")
-		if path == "" {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return "", err
-			}
-			path = home + "/.config/neocities/config.json"
-		}
-		CONFIG_PATH = path
-	}
-
-	return CONFIG_PATH, nil
 }

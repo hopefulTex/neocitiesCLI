@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // GET "/api/key"
 func GetAPIkey(username, password string) (string, error) {
 	request := fmt.Sprintf("https://%s:%s@neocities.org/api/key", username, password)
-	client := http.Client{}
+	client := http.Client{Timeout: 10 * time.Second}
 	reply, err := client.Get(request)
 	if err != nil {
 		fmt.Println("Get Error")

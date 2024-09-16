@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"neocitiesCli/api"
 	"neocitiesCli/ui"
+	"neocitiesCli/util"
 	"os"
 	"path/filepath"
 )
@@ -16,7 +17,7 @@ type command struct {
 	useGitIgnore bool
 }
 
-func execute(conn *api.Connection, cmd command) error {
+func execute(conn *api.Connection, config api.Config, cmd command) error {
 	var err error
 
 	switch cmd.function {
@@ -32,12 +33,12 @@ func execute(conn *api.Connection, cmd command) error {
 			return err
 		}
 		if cmd.useGitIgnore {
-			files, err = removeGitIgnore(files)
+			files, err = util.RemoveGitIgnore(files)
 			if err != nil {
 				return err
 			}
 		}
-		upload(conn, files)
+		util.Upload(conn, files)
 	case "upload":
 		var errs []error
 		var files []string
@@ -57,16 +58,16 @@ func execute(conn *api.Connection, cmd command) error {
 			return fmt.Errorf("multiple errors:\n%s", errorList)
 		}
 		if cmd.useGitIgnore {
-			files, err = removeGitIgnore(cmd.args)
+			files, err = util.RemoveGitIgnore(cmd.args)
 			if err != nil {
 				return err
 			}
 		}
-		upload(conn, files)
+		util.Upload(conn, files)
 	case "delete":
 		files := cmd.args
 		if cmd.useGitIgnore {
-			files, err = removeGitIgnore(cmd.args)
+			files, err = util.RemoveGitIgnore(cmd.args)
 			if err != nil {
 				return err
 			}
@@ -107,7 +108,7 @@ func execute(conn *api.Connection, cmd command) error {
 		}
 		switch cmd.args[0] {
 		case "list":
-			configList, err := readConfig()
+			configList, err := util.ReadConfig()
 			if err != nil {
 				return err
 			}
@@ -120,7 +121,7 @@ func execute(conn *api.Connection, cmd command) error {
 				fmt.Println("Usage: neocities config set [domain]")
 				return fmt.Errorf(("invalid arguments"))
 			}
-			configList, err := readConfig()
+			configList, err := util.ReadConfig()
 			if err != nil {
 				return err
 			}
@@ -141,27 +142,27 @@ func execute(conn *api.Connection, cmd command) error {
 				return fmt.Errorf("domain %s not found", cmd.args[1])
 			}
 			for _, i := range changed {
-				err = writeConfig(configList.Configs[i])
+				err = util.WriteConfig(configList.Configs[i])
 				if err != nil {
 					return err
 				}
 			}
 			return nil
 		case "login":
-			cfg, err := login()
+			cfg, err := util.Login()
 			if err != nil {
 				return err
 			}
-			err = writeConfig(cfg)
+			err = util.WriteConfig(cfg)
 			return err
 		case "reset":
 			if len(cmd.args) == 0 || cmd.args[0] != "--force" {
-				resetting := resetPrompt()
+				resetting := util.ResetPrompt()
 				if !resetting {
 					return fmt.Errorf("reset aborted")
 				}
 			}
-			path, err := getConfigPath()
+			path, err := util.GetConfigPath()
 			if err != nil {
 				return err
 			}
@@ -169,7 +170,7 @@ func execute(conn *api.Connection, cmd command) error {
 			if err != nil {
 				return err
 			}
-			writeConfig(DEFAILT_CONFIG.Configs[0])
+			util.WriteConfig(util.DEFAULT_CONFIG.Configs[0])
 		default:
 			fmt.Printf("invalid subcommand: %s\n", cmd.args[0])
 			fmt.Print(CONFIG_HELP_STRING)
@@ -177,7 +178,7 @@ func execute(conn *api.Connection, cmd command) error {
 		}
 
 	case "tui":
-		err := ui.Run()
+		err := ui.Run(*conn, config)
 
 		if err != nil {
 			return err

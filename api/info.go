@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -19,7 +18,7 @@ type SiteInfo struct {
 // GET "/api/info"
 // GET "/api/info?sitename=sitename"
 func (c *Connection) Info(sitename string) (SiteInfo, error) {
-	fmt.Println("----Info----")
+	// fmt.Println("----Info----")
 
 	sitename = strings.TrimPrefix(sitename, "https://")
 	sitename = strings.TrimPrefix(sitename, "http://")

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"neocitiesCli/api"
+	util "neocitiesCli/cli/config"
 	"os"
 )
 
@@ -16,14 +17,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := getDefaultConfig()
+	config, err := util.GetDefaultConfig()
 	if err != nil {
-		config = DEFAILT_CONFIG.Configs[0]
+		config = util.DEFAULT_CONFIG.Configs[0]
 	}
 
 	if config.Domain == "" || config.APIKey == "" {
 		fmt.Println("no login found")
-		config, err = login()
+		config, err = util.Login()
 		if err != nil {
 			fmt.Println("unable to login")
 			fmt.Printf("error: %s\n", err)
@@ -31,7 +32,7 @@ func main() {
 		} else {
 			fmt.Println("login successful")
 		}
-		err = writeConfig(config)
+		err = util.WriteConfig(config)
 		if err != nil {
 			fmt.Println("unable to write config")
 			fmt.Printf("error: %s\n", err)
@@ -46,8 +47,7 @@ func main() {
 	}
 
 	conn := api.NewConnection(config)
-
-	err = execute(conn, cmd)
+	err = execute(conn, config, cmd)
 	if err != nil {
 		fmt.Println("error executing command")
 		fmt.Printf("error: %s\n", err)
