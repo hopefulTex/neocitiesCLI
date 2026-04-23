@@ -1,4 +1,4 @@
-module neocitiesCli
+module github.com/hopefulTex/neocitiesCLI
 
 go 1.22.1
 
